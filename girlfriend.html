@@ -138,6 +138,88 @@
             border-radius: 99px;
         }
 
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .music-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid var(--pink-200);
+            border-radius: 99px;
+            padding: 5px 11px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--pink-700);
+            cursor: pointer;
+            transition: all 0.25s var(--ease-spring);
+            box-shadow: 0 2px 8px rgba(201, 24, 74, 0.08);
+        }
+
+        .music-btn:hover {
+            transform: scale(1.05);
+            background: #fff;
+            border-color: var(--pink-400);
+        }
+
+        .music-btn.muted {
+            opacity: 0.65;
+            color: #888;
+            border-color: #e0e0e0;
+        }
+
+        .sound-waves {
+            display: inline-flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 10px;
+        }
+
+        .sound-waves i {
+            display: block;
+            width: 2px;
+            height: 3px;
+            background: var(--pink-500);
+            border-radius: 2px;
+            transition: height 0.2s ease;
+        }
+
+        .music-btn.playing .sound-waves i:nth-child(1) {
+            animation: waveBounce 0.8s infinite ease-in-out alternate;
+        }
+
+        .music-btn.playing .sound-waves i:nth-child(2) {
+            animation: waveBounce 0.8s 0.25s infinite ease-in-out alternate;
+        }
+
+        .music-btn.playing .sound-waves i:nth-child(3) {
+            animation: waveBounce 0.8s 0.5s infinite ease-in-out alternate;
+        }
+
+        @keyframes waveBounce {
+            0% { height: 2px; }
+            100% { height: 10px; }
+        }
+
+        .audio-hint {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 12px;
+            padding: 6px 14px;
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px dashed var(--pink-400);
+            border-radius: 99px;
+            font-size: 0.74rem;
+            font-weight: 600;
+            color: var(--pink-700);
+        }
+
         .step-dots {
             display: flex;
             gap: 6px;
@@ -592,10 +674,19 @@
                 <span>🌸</span>
                 <span>Pink Apothecary • 20/10</span>
             </div>
-            <div class="step-dots">
-                <div class="dot active" id="dot-0"></div>
-                <div class="dot" id="dot-1"></div>
-                <div class="dot" id="dot-2"></div>
+            <div class="top-actions">
+                <button class="music-btn playing" id="music-btn" onclick="App.toggleBgm()" title="Bật/Tắt nhạc nền dễ thương">
+                    <span class="music-icon">🎵</span>
+                    <span class="music-label" id="music-text">Nhạc: Bật</span>
+                    <span class="sound-waves" id="sound-waves">
+                        <i></i><i></i><i></i>
+                    </span>
+                </button>
+                <div class="step-dots">
+                    <div class="dot active" id="dot-0"></div>
+                    <div class="dot" id="dot-1"></div>
+                    <div class="dot" id="dot-2"></div>
+                </div>
             </div>
         </header>
 
@@ -621,6 +712,10 @@
                     Vì ở xa chưa thể trực tiếp dẫn em đi chơi, anh dựng riêng quầy pha chế nhỏ này để nạp đầy năng lượng
                     vui vẻ cho em hôm nay.
                 </p>
+                <div class="audio-hint">
+                    <span>🎧</span>
+                    <span>Chạm vào màn hình để nghe nhạc nền hộp nhạc & âm thanh pha chế nhé</span>
+                </div>
             </div>
 
             <button class="btn-primary" onclick="App.goToStep(1)">
@@ -809,43 +904,350 @@
 
     <script>
         /**
-         * Sound Engine: Pure Web Audio Synthesizer (Zero External Assets)
+         * Sound Engine: Pure Web Audio Synthesizer
+         * Features:
+         * - Zero external mp3/asset dependencies (100% reliable offline & instant)
+         * - Dual-bus architecture: Lowpass filtered SFX + Procedural Lofi Music Box BGM
+         * - Butterworth 1800Hz filter cuts all piercing harshness for a warm, gentle, cute kalimba tone
          */
         class SoundEngine {
             constructor() {
                 this.ctx = null;
+                this.sfxFilter = null;
+                this.sfxGain = null;
+                this.bgmFilter = null;
+                this.bgmGain = null;
+                this.bgmPlaying = false;
+                this.bgmTimeout = null;
+                this.lastBrewTick = 0;
             }
+
             init() {
                 if (!this.ctx) {
                     const AudioCtx = window.AudioContext || window.webkitAudioContext;
                     this.ctx = new AudioCtx();
+
+                    // Master SFX Bus with anti-harshness lowpass filter
+                    this.sfxFilter = this.ctx.createBiquadFilter();
+                    this.sfxFilter.type = 'lowpass';
+                    this.sfxFilter.frequency.setValueAtTime(1900, this.ctx.currentTime);
+                    this.sfxFilter.Q.setValueAtTime(0.7, this.ctx.currentTime);
+
+                    this.sfxGain = this.ctx.createGain();
+                    this.sfxGain.gain.setValueAtTime(0.28, this.ctx.currentTime);
+
+                    this.sfxFilter.connect(this.sfxGain);
+                    this.sfxGain.connect(this.ctx.destination);
+
+                    // Master BGM Bus with ultra-soft music box filter
+                    this.bgmFilter = this.ctx.createBiquadFilter();
+                    this.bgmFilter.type = 'lowpass';
+                    this.bgmFilter.frequency.setValueAtTime(1300, this.ctx.currentTime);
+                    this.bgmFilter.Q.setValueAtTime(0.8, this.ctx.currentTime);
+
+                    this.bgmGain = this.ctx.createGain();
+                    this.bgmGain.gain.setValueAtTime(0.0001, this.ctx.currentTime);
+
+                    this.bgmFilter.connect(this.bgmGain);
+                    this.bgmGain.connect(this.ctx.destination);
                 }
-                if (this.ctx.state === 'suspended') this.ctx.resume();
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
             }
-            playNote(freq, type = 'sine', duration = 0.45, gainVal = 0.12) {
+
+            startBgm() {
                 this.init();
+                if (this.bgmPlaying) return;
+                this.bgmPlaying = true;
+
                 const now = this.ctx.currentTime;
+                this.bgmGain.gain.cancelScheduledValues(now);
+                this.bgmGain.gain.setValueAtTime(Math.max(0.0001, this.bgmGain.gain.value), now);
+                this.bgmGain.gain.exponentialRampToValueAtTime(0.12, now + 1.2);
+
+                this.scheduleBgmLoop();
+                this.updateBgmUi(true);
+            }
+
+            pauseBgm() {
+                if (!this.ctx || !this.bgmPlaying) return;
+                this.bgmPlaying = false;
+                clearTimeout(this.bgmTimeout);
+
+                const now = this.ctx.currentTime;
+                this.bgmGain.gain.cancelScheduledValues(now);
+                this.bgmGain.gain.setValueAtTime(Math.max(0.0001, this.bgmGain.gain.value), now);
+                this.bgmGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
+
+                this.updateBgmUi(false);
+            }
+
+            toggleBgm() {
+                this.init();
+                if (this.bgmPlaying) {
+                    this.pauseBgm();
+                } else {
+                    this.startBgm();
+                }
+            }
+
+            updateBgmUi(isPlaying) {
+                const btn = document.getElementById('music-btn');
+                const text = document.getElementById('music-text');
+                if (!btn || !text) return;
+                if (isPlaying) {
+                    btn.classList.add('playing');
+                    btn.classList.remove('muted');
+                    text.innerText = 'Nhạc: Bật';
+                } else {
+                    btn.classList.remove('playing');
+                    btn.classList.add('muted');
+                    text.innerText = 'Nhạc: Tắt';
+                }
+            }
+
+            scheduleBgmLoop() {
+                if (!this.bgmPlaying || !this.ctx) return;
+
+                // 16-beat romantic music box progression (Fmaj7 -> Em7 -> Dm7 -> Cmaj9)
+                const notes = [
+                    // Bar 1: Fmaj7 (F, C, E, A)
+                    [0,    174.61, 1.8, 0.9, true],   // F3 bass
+                    [0.5,  329.63, 0.9, 0.6, false],  // E4
+                    [1.0,  440.00, 0.9, 0.7, false],  // A4
+                    [1.5,  523.25, 0.9, 0.8, false],  // C5
+                    [2.0,  261.63, 1.2, 0.6, false],  // C4
+                    [2.5,  659.25, 1.0, 0.7, false],  // E5
+                    [3.0,  523.25, 0.8, 0.6, false],  // C5
+                    [3.5,  440.00, 0.8, 0.5, false],  // A4
+
+                    // Bar 2: Em7 (E, G, B, D)
+                    [4.0,  164.81, 1.8, 0.9, true],   // E3 bass
+                    [4.5,  293.66, 0.9, 0.6, false],  // D4
+                    [5.0,  392.00, 0.9, 0.7, false],  // G4
+                    [5.5,  493.88, 0.9, 0.7, false],  // B4
+                    [6.0,  587.33, 1.2, 0.8, false],  // D5
+                    [6.5,  523.25, 1.0, 0.7, false],  // C5
+                    [7.0,  392.00, 0.8, 0.6, false],  // G4
+                    [7.5,  329.63, 0.8, 0.5, false],  // E4
+
+                    // Bar 3: Dm7 (D, F, A, C)
+                    [8.0,  146.83, 1.8, 0.9, true],   // D3 bass
+                    [8.5,  349.23, 0.9, 0.6, false],  // F4
+                    [9.0,  440.00, 0.9, 0.7, false],  // A4
+                    [9.5,  523.25, 0.9, 0.8, false],  // C5
+                    [10.0, 659.25, 1.2, 0.8, false],  // E5
+                    [10.5, 587.33, 1.0, 0.7, false],  // D5
+                    [11.0, 440.00, 0.8, 0.6, false],  // A4
+                    [11.5, 349.23, 0.8, 0.5, false],  // F4
+
+                    // Bar 4: Cmaj9 (C, E, G, B, D)
+                    [12.0, 130.81, 2.0, 0.9, true],   // C3 bass
+                    [12.5, 392.00, 0.9, 0.6, false],  // G4
+                    [13.0, 493.88, 0.9, 0.7, false],  // B4
+                    [13.5, 587.33, 0.9, 0.8, false],  // D5
+                    [14.0, 523.25, 1.6, 0.8, false],  // C5
+                    [14.5, 659.25, 1.2, 0.7, false],  // E5
+                    [15.0, 783.99, 1.2, 0.7, false],  // G5
+                    [15.5, 523.25, 1.0, 0.6, false],  // C5
+                ];
+
+                const secPerBeat = 60 / 68; // 68 BPM = ~0.88s per beat
+                const startTime = this.ctx.currentTime + 0.05;
+
+                notes.forEach(([beat, freq, dur, vol, isBass]) => {
+                    const time = startTime + (beat * secPerBeat);
+                    this.playBgmNote(freq, dur, vol, time, isBass);
+                });
+
+                const totalDuration = 16 * secPerBeat;
+                this.bgmTimeout = setTimeout(() => {
+                    this.scheduleBgmLoop();
+                }, (totalDuration - 0.25) * 1000);
+            }
+
+            playBgmNote(freq, duration, gainMult, time, isBass = false) {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const noteGain = this.ctx.createGain();
+
+                osc.type = isBass ? 'triangle' : 'sine';
+                osc.frequency.setValueAtTime(freq, time);
+
+                const peakGain = (isBass ? 0.08 : 0.06) * gainMult;
+                noteGain.gain.setValueAtTime(0.0001, time);
+                noteGain.gain.exponentialRampToValueAtTime(peakGain, time + 0.012);
+                noteGain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+
+                osc.connect(noteGain);
+                noteGain.connect(this.bgmFilter);
+
+                osc.start(time);
+                osc.stop(time + duration);
+
+                // Gentle music box tine harmonic shimmer
+                if (!isBass && freq > 300) {
+                    const tineOsc = this.ctx.createOscillator();
+                    const tineGain = this.ctx.createGain();
+                    tineOsc.type = 'sine';
+                    tineOsc.frequency.setValueAtTime(freq * 2.01, time);
+                    tineGain.gain.setValueAtTime(0.0001, time);
+                    tineGain.gain.exponentialRampToValueAtTime(peakGain * 0.16, time + 0.008);
+                    tineGain.gain.exponentialRampToValueAtTime(0.0001, time + (duration * 0.45));
+                    tineOsc.connect(tineGain);
+                    tineGain.connect(this.bgmFilter);
+                    tineOsc.start(time);
+                    tineOsc.stop(time + duration);
+                }
+            }
+
+            // SFX 1: Water Bubble Pop (for ingredients)
+            playBubblePop(index) {
+                this.init();
+                const baseFreqs = [392, 440, 523, 587]; // G4, A4, C5, D5
+                const f0 = baseFreqs[index % baseFreqs.length];
+                const now = this.ctx.currentTime;
+
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
-                osc.type = type;
-                osc.frequency.setValueAtTime(freq, now);
-                gain.gain.setValueAtTime(gainVal, now);
-                gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+                osc.type = 'sine';
+
+                osc.frequency.setValueAtTime(f0, now);
+                osc.frequency.exponentialRampToValueAtTime(f0 * 1.35, now + 0.09);
+
+                gain.gain.setValueAtTime(0.0001, now);
+                gain.gain.exponentialRampToValueAtTime(0.18, now + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+
                 osc.connect(gain);
-                gain.connect(this.ctx.destination);
+                gain.connect(this.sfxFilter);
                 osc.start(now);
-                osc.stop(now + duration);
+                osc.stop(now + 0.18);
+
+                // Delicate kalimba chime overtone
+                const chime = this.ctx.createOscillator();
+                const chimeGain = this.ctx.createGain();
+                chime.type = 'sine';
+                chime.frequency.setValueAtTime(f0 * 2, now + 0.03);
+                chimeGain.gain.setValueAtTime(0.0001, now + 0.03);
+                chimeGain.gain.exponentialRampToValueAtTime(0.05, now + 0.04);
+                chimeGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.28);
+                chime.connect(chimeGain);
+                chimeGain.connect(this.sfxFilter);
+                chime.start(now + 0.03);
+                chime.stop(now + 0.3);
             }
-            playChord() {
-                const chord = [523.25, 659.25, 783.99, 1046.50, 1318.51];
-                chord.forEach((f, idx) => {
-                    setTimeout(() => this.playNote(f, 'triangle', 0.8, 0.14), idx * 90);
+
+            // SFX 2: Gentle step navigation chime
+            playStepChime() {
+                this.init();
+                const now = this.ctx.currentTime;
+                const notes = [523.25, 659.25]; // C5, E5
+                notes.forEach((freq, idx) => {
+                    const t = now + (idx * 0.08);
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, t);
+                    gain.gain.setValueAtTime(0.0001, t);
+                    gain.gain.exponentialRampToValueAtTime(0.11, t + 0.012);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+                    osc.connect(gain);
+                    gain.connect(this.sfxFilter);
+                    osc.start(t);
+                    osc.stop(t + 0.55);
                 });
+            }
+
+            // SFX 3: Gentle Shaking milestone tick (replaces loud repetitive buzzing)
+            playGentleBrewTick(progress) {
+                this.init();
+                const milestone = Math.floor(progress / 15);
+                if (milestone <= this.lastBrewTick) return;
+                this.lastBrewTick = milestone;
+
+                const scale = [392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00];
+                const freq = scale[milestone % scale.length];
+                const now = this.ctx.currentTime;
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now);
+                osc.frequency.exponentialRampToValueAtTime(freq * 1.15, now + 0.08);
+
+                gain.gain.setValueAtTime(0.0001, now);
+                gain.gain.exponentialRampToValueAtTime(0.08, now + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+
+                osc.connect(gain);
+                gain.connect(this.sfxFilter);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            }
+
+            // SFX 4: Magical fairy celebration cascade
+            playFairyCelebration() {
+                this.init();
+                const now = this.ctx.currentTime;
+                const notes = [523.25, 659.25, 783.99, 880.00, 1046.50, 1318.51];
+                notes.forEach((freq, idx) => {
+                    const t = now + (idx * 0.075);
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, t);
+
+                    gain.gain.setValueAtTime(0.0001, t);
+                    gain.gain.exponentialRampToValueAtTime(0.12, t + 0.015);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+
+                    osc.connect(gain);
+                    gain.connect(this.sfxFilter);
+                    osc.start(t);
+                    osc.stop(t + 0.95);
+                });
+            }
+
+            // SFX 5: Ticket tap
+            playTicketTap(isClaimed) {
+                this.init();
+                const now = this.ctx.currentTime;
+                if (isClaimed) {
+                    [783.99, 1046.50].forEach((freq, idx) => {
+                        const t = now + (idx * 0.06);
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, t);
+                        gain.gain.setValueAtTime(0.0001, t);
+                        gain.gain.exponentialRampToValueAtTime(0.1, t + 0.01);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+                        osc.connect(gain);
+                        gain.connect(this.sfxFilter);
+                        osc.start(t);
+                        osc.stop(t + 0.45);
+                    });
+                } else {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.exponentialRampToValueAtTime(330, now + 0.07);
+                    gain.gain.setValueAtTime(0.0001, now);
+                    gain.gain.exponentialRampToValueAtTime(0.09, now + 0.008);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
+                    osc.connect(gain);
+                    gain.connect(this.sfxFilter);
+                    osc.start(now);
+                    osc.stop(now + 0.16);
+                }
             }
         }
 
         /**
-         * Particle Engine: High-DPI Confetti & Hearts Burst
+         * Particle Engine: High-DPI Confetti & Sweet Heart Burst
          */
         class ConfettiEngine {
             constructor(canvasId) {
@@ -856,24 +1258,28 @@
                 this.resize();
                 window.addEventListener('resize', () => this.resize());
             }
+
             resize() {
                 const dpr = window.devicePixelRatio || 1;
                 this.canvas.width = window.innerWidth * dpr;
                 this.canvas.height = window.innerHeight * dpr;
                 this.ctx.scale(dpr, dpr);
             }
+
             burst() {
                 const colors = ['#ff4d6d', '#ff8fa3', '#ffb3c6', '#c9184a', '#ffd166', '#ffffff'];
-                for (let i = 0; i < 75; i++) {
+                for (let i = 0; i < 80; i++) {
+                    const isHeart = Math.random() < 0.42;
                     this.particles.push({
+                        type: isHeart ? 'heart' : 'rect',
                         x: window.innerWidth / 2,
                         y: window.innerHeight / 2 + 40,
-                        vx: (Math.random() - 0.5) * 15,
-                        vy: -(Math.random() * 14 + 5),
-                        size: Math.random() * 7 + 5,
+                        vx: (Math.random() - 0.5) * 14,
+                        vy: -(Math.random() * 13 + 5),
+                        size: isHeart ? (Math.random() * 9 + 8) : (Math.random() * 7 + 5),
                         color: colors[Math.floor(Math.random() * colors.length)],
                         rot: Math.random() * 360,
-                        vRot: (Math.random() - 0.5) * 12,
+                        vRot: (Math.random() - 0.5) * 10,
                         life: 1
                     });
                 }
@@ -882,12 +1288,13 @@
                     this.loop();
                 }
             }
+
             loop() {
                 this.ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
                 this.particles.forEach((p) => {
                     p.x += p.vx;
                     p.y += p.vy;
-                    p.vy += 0.36; // Gravity
+                    p.vy += 0.35;
                     p.vx *= 0.99;
                     p.rot += p.vRot;
                     p.life -= 0.008;
@@ -897,7 +1304,17 @@
                     this.ctx.rotate((p.rot * Math.PI) / 180);
                     this.ctx.globalAlpha = Math.max(0, p.life);
                     this.ctx.fillStyle = p.color;
-                    this.ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.65);
+
+                    if (p.type === 'heart') {
+                        const s = p.size;
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(0, s * 0.3);
+                        this.ctx.bezierCurveTo(-s / 2, -s * 0.2, -s, s * 0.4, 0, s);
+                        this.ctx.bezierCurveTo(s, s * 0.4, s / 2, -s * 0.2, 0, s * 0.3);
+                        this.ctx.fill();
+                    } else {
+                        this.ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.65);
+                    }
                     this.ctx.restore();
                 });
                 this.particles = this.particles.filter((p) => p.life > 0);
@@ -918,6 +1335,19 @@
             selectedCount: 0,
             brewProgress: 0,
             brewTimer: null,
+            audioStarted: false,
+
+            initAudio() {
+                if (!this.audioStarted) {
+                    this.audioStarted = true;
+                    this.sfx.startBgm();
+                }
+            },
+
+            toggleBgm() {
+                this.audioStarted = true;
+                this.sfx.toggleBgm();
+            },
 
             ingredientsData: [
                 {
@@ -943,7 +1373,8 @@
             ],
 
             goToStep(stepIdx) {
-                this.sfx.playNote(659.25, 'sine', 0.4);
+                this.initAudio();
+                this.sfx.playStepChime();
                 document.querySelectorAll('.view').forEach((el, i) => {
                     el.classList.toggle('active', i === stepIdx);
                 });
@@ -953,18 +1384,18 @@
             },
 
             addIngredient(btnEl, index) {
+                this.initAudio();
                 if (btnEl.classList.contains('added')) return;
                 btnEl.classList.add('added');
                 btnEl.querySelector('.ing-dose').innerText = '✓ ĐÃ THÊM';
 
                 this.selectedCount++;
-                const notes = [523.25, 587.33, 659.25, 783.99];
-                this.sfx.playNote(notes[this.selectedCount - 1], 'triangle', 0.45, 0.15);
-                if (navigator.vibrate) navigator.vibrate(25);
+                this.sfx.playBubblePop(index);
+                if (navigator.vibrate) navigator.vibrate(20);
 
                 // Update SVG Liquid Height & Gradient
                 const item = this.ingredientsData[index];
-                const yOffset = 200 - (this.selectedCount * 34); // Rises from y=200 up to y=64
+                const yOffset = 200 - (this.selectedCount * 34);
                 document.getElementById('wave-group').setAttribute('transform', `translate(0, ${yOffset})`);
                 document.getElementById('grad-stop-1').setAttribute('stop-color', item.c1);
                 document.getElementById('grad-stop-2').setAttribute('stop-color', item.c2);
@@ -997,6 +1428,7 @@
 
                 const startHold = (e) => {
                     e.preventDefault();
+                    this.initAudio();
                     if (this.brewProgress >= 100) return;
                     bottle.classList.add('shaking');
 
@@ -1006,16 +1438,17 @@
                         fill.style.width = `${this.brewProgress}%`;
                         label.innerText = `Đang hòa quyện năng lượng... (${Math.floor(this.brewProgress)}%)`;
 
-                        if (Math.floor(this.brewProgress) % 10 === 0) {
-                            this.sfx.playNote(440 + this.brewProgress * 4.5, 'sine', 0.12, 0.07);
-                            if (navigator.vibrate) navigator.vibrate(18);
+                        // Soothing milestone bubble tick (warm, cute, non-piercing)
+                        this.sfx.playGentleBrewTick(this.brewProgress);
+                        if (navigator.vibrate && Math.floor(this.brewProgress) % 15 === 0) {
+                            navigator.vibrate(15);
                         }
 
                         if (this.brewProgress >= 100) {
                             clearInterval(this.brewTimer);
                             bottle.classList.remove('shaking');
-                            this.sfx.playChord();
-                            if (navigator.vibrate) navigator.vibrate([80, 40, 150]);
+                            this.sfx.playFairyCelebration();
+                            if (navigator.vibrate) navigator.vibrate([60, 30, 100]);
                             setTimeout(() => {
                                 this.goToStep(2);
                                 this.fx.burst();
@@ -1038,19 +1471,24 @@
             },
 
             toggleTicket(el) {
+                this.initAudio();
                 el.classList.toggle('claimed');
                 const isClaimed = el.classList.contains('claimed');
                 el.querySelector('.ticket-stub').innerText = isClaimed ? '✓ ĐÃ CHỐT' : 'NHẬN VÉ';
-                this.sfx.playNote(isClaimed ? 880 : 523.25, 'triangle', 0.3, 0.12);
-                if (navigator.vibrate) navigator.vibrate(20);
+                this.sfx.playTicketTap(isClaimed);
+                if (navigator.vibrate) navigator.vibrate(18);
 
                 const total = document.querySelectorAll('.ticket.claimed').length;
                 document.getElementById('claim-counter').innerText = `Đã nhận: ${total}/3`;
-                if (total === 3) this.fx.burst();
+                if (total === 3) {
+                    this.sfx.playFairyCelebration();
+                    this.fx.burst();
+                }
             },
 
             copyConfirmation() {
-                this.sfx.playChord();
+                this.initAudio();
+                this.sfx.playFairyCelebration();
                 this.fx.burst();
                 const claimedTitles = Array.from(document.querySelectorAll('.ticket.claimed h4'))
                     .map(h => h.innerText);
@@ -1070,6 +1508,10 @@
                 }
             }
         };
+
+        // Auto start gentle audio on first user touch / click
+        window.addEventListener('click', () => App.initAudio(), { once: true });
+        window.addEventListener('touchstart', () => App.initAudio(), { once: true });
     </script>
 </body>
 
