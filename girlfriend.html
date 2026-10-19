@@ -928,6 +928,12 @@
 
             startBgm() {
                 this.init();
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume().then(() => {
+                        this.startBgm();
+                    }).catch(() => {});
+                    return;
+                }
                 if (this.bgmPlaying) return;
                 this.bgmPlaying = true;
 
@@ -1270,8 +1276,12 @@
             audioStarted: false,
 
             initAudio() {
-                if (!this.audioStarted) {
-                    this.audioStarted = true;
+                this.sfx.init();
+                if (this.sfx.ctx && this.sfx.ctx.state === 'suspended') {
+                    this.sfx.ctx.resume().then(() => {
+                        this.sfx.startBgm();
+                    }).catch(() => {});
+                } else {
                     this.sfx.startBgm();
                 }
             },
@@ -1436,16 +1446,13 @@
             }
         };
 
-        // 100% Automatic Music Playback:
-        // Try immediately on load & ensure start on very first interaction
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => App.initAudio());
-        } else {
+        // 100% Automatic Music Playback on user touch / click
+        const triggerAutoPlay = () => {
             App.initAudio();
-        }
+        };
 
-        ['click', 'touchstart', 'touchend', 'pointerdown', 'mousedown'].forEach((evt) => {
-            window.addEventListener(evt, () => App.initAudio(), { once: true, passive: true });
+        ['click', 'touchstart', 'touchend', 'pointerdown', 'keydown'].forEach((evt) => {
+            window.addEventListener(evt, triggerAutoPlay, { passive: true });
         });
     </script>
 </body>
