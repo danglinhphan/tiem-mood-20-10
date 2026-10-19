@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Pink Apothecary — 20/10 Special Edition</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-rose: #fff0f3;
+            --pink-100: #ffe5ec;
+            --pink-200: #ffc2d1;
+            --pink-400: #ff8fa3;
+            --pink-500: #ff4d6d;
+            --pink-700: #c9184a;
+            --pink-900: #590d22;
+            --glass-bg: rgba(255, 255, 255, 0.78);
+            --glass-border: rgba(255, 255, 255, 0.95);
+            --shadow-soft: 0 24px 48px -12px rgba(201, 24, 74, 0.18), 0 4px 16px -4px rgba(201, 24, 74, 0.08);
+            --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-rose);
+            background-image:
+                radial-gradient(at 15% 15%, #ffc2d1 0px, transparent 55%),
+                radial-gradient(at 85% 80%, #ffb3c6 0px, transparent 55%),
+                radial-gradient(at 50% 50%, #fff0f3 0px, transparent 70%);
+            color: var(--pink-900);
+            min-height: 100dvh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        #fx-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        /* Ambient Orbs */
+        .ambient-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(45px);
+            opacity: 0.55;
+            z-index: 1;
+            pointer-events: none;
+            animation: floatOrb 12s ease-in-out infinite alternate;
+        }
+
+        .orb-1 {
+            width: 260px;
+            height: 260px;
+            background: #ff9ebb;
+            top: -60px;
+            left: -60px;
+        }
+
+        .orb-2 {
+            width: 300px;
+            height: 300px;
+            background: #ffb3c6;
+            bottom: -80px;
+            right: -60px;
+            animation-delay: -5s;
+        }
+
+        @keyframes floatOrb {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            100% {
+                transform: translate(30px, 25px) scale(1.08);
+            }
+        }
+
+        /* Main Glass Container */
+        .app-shell {
+            width: 100%;
+            max-width: 430px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1.5px solid var(--glass-border);
+            border-radius: 32px;
+            padding: 28px 24px;
+            box-shadow: var(--shadow-soft), inset 0 1px 0 0 #ffffff;
+            position: relative;
+            z-index: 10;
+            overflow: hidden;
+        }
+
+        /* Top Step Indicator */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .brand-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--pink-100);
+            border: 1px solid var(--pink-200);
+            color: var(--pink-700);
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 6px 12px;
+            border-radius: 99px;
+        }
+
+        .step-dots {
+            display: flex;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 99px;
+            background: var(--pink-200);
+            transition: all 0.4s var(--ease-spring);
+        }
+
+        .dot.active {
+            width: 24px;
+            background: var(--pink-500);
+        }
+
+        /* Screen Transitions */
+        .view {
+            display: none;
+            opacity: 0;
+            transform: translateY(12px) scale(0.98);
+            transition: opacity 0.45s var(--ease-out), transform 0.45s var(--ease-out);
+        }
+
+        .view.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.75rem;
+            line-height: 1.25;
+            color: var(--pink-900);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 0.92rem;
+            line-height: 1.6;
+            color: #7a3e4d;
+            text-align: center;
+            margin-bottom: 22px;
+        }
+
+        /* Hero Illustration View 1 */
+        .hero-card {
+            background: linear-gradient(145deg, #fff8fa, #ffe5ec);
+            border: 1px solid #ffd6e0;
+            border-radius: 24px;
+            padding: 22px 18px;
+            text-align: center;
+            margin-bottom: 22px;
+            position: relative;
+        }
+
+        .vip-tag {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--pink-700);
+            margin-top: 8px;
+        }
+
+        /* SVG Bottle & Liquid Physics */
+        .bottle-stage {
+            position: relative;
+            height: 195px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .bottle-svg {
+            width: 135px;
+            height: 185px;
+            filter: drop-shadow(0 14px 20px rgba(201, 24, 74, 0.16));
+            transition: transform 0.2s;
+            transform-origin: center bottom;
+        }
+
+        .bottle-svg.shaking {
+            animation: bottleShake 0.14s infinite alternate ease-in-out;
+        }
+
+        @keyframes bottleShake {
+            0% {
+                transform: rotate(-7deg) translateY(-3px) scale(1.03);
+            }
+
+            100% {
+                transform: rotate(7deg) translateY(2px) scale(1.03);
+            }
+        }
+
+        #wave-group {
+            transition: transform 0.75s var(--ease-spring);
+        }
+
+        .wave-anim {
+            animation: waveSlide 3s linear infinite;
+        }
+
+        @keyframes waveSlide {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-100px);
+            }
+        }
+
+        /* Toast Feedback Box */
+        .inspector-box {
+            min-height: 64px;
+            background: #fff9fb;
+            border: 1px solid #ffccd5;
+            border-radius: 16px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: inset 0 2px 6px rgba(255, 143, 163, 0.08);
+            transition: transform 0.25s var(--ease-spring), border-color 0.25s;
+        }
+
+        .inspector-box.pop {
+            transform: scale(1.025);
+            border-color: var(--pink-500);
+        }
+
+        .inspector-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--pink-100);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            flex-shrink: 0;
+        }
+
+        .inspector-text {
+            font-size: 0.84rem;
+            line-height: 1.45;
+            font-weight: 600;
+            color: var(--pink-900);
+        }
+
+        /* Ingredient Bento Grid */
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .ing-card {
+            background: #ffffff;
+            border: 1.5px solid #ffe0e9;
+            border-radius: 18px;
+            padding: 12px;
+            text-align: left;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.25s var(--ease-spring);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .ing-card:hover {
+            border-color: var(--pink-400);
+            transform: translateY(-2px);
+        }
+
+        .ing-card:active {
+            transform: scale(0.96);
+        }
+
+        .ing-card.added {
+            background: #fff0f4;
+            border-color: var(--pink-400);
+            opacity: 0.65;
+            pointer-events: none;
+        }
+
+        .ing-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ing-emoji {
+            font-size: 1.35rem;
+        }
+
+        .ing-dose {
+            font-size: 0.68rem;
+            font-weight: 800;
+            color: var(--pink-700);
+            background: var(--pink-100);
+            padding: 2px 7px;
+            border-radius: 99px;
+        }
+
+        .ing-card.added .ing-dose {
+            background: var(--pink-500);
+            color: #fff;
+        }
+
+        .ing-title {
+            font-size: 0.86rem;
+            font-weight: 700;
+            color: var(--pink-900);
+            margin-top: 2px;
+        }
+
+        .ing-desc {
+            font-size: 0.72rem;
+            color: #8c5362;
+        }
+
+        /* Primary Button & Hold-to-Brew Button */
+        .btn-primary {
+            position: relative;
+            width: 100%;
+            background: linear-gradient(135deg, var(--pink-500), var(--pink-700));
+            color: #ffffff;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 99px;
+            font-family: inherit;
+            font-size: 0.96rem;
+            font-weight: 700;
+            cursor: pointer;
+            overflow: hidden;
+            box-shadow: 0 10px 24px -6px rgba(201, 24, 74, 0.45);
+            transition: transform 0.2s var(--ease-spring), opacity 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary:disabled {
+            background: #e5ced5;
+            color: #9e7b86;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        .hold-fill {
+            position: absolute;
+            inset: 0;
+            width: 0%;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.45));
+            pointer-events: none;
+            transition: width 0.06s linear;
+        }
+
+        .btn-label {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Thermal Receipt & Perforated Tickets (Step 3) */
+        .receipt-paper {
+            background: #fffdfd;
+            border-radius: 20px;
+            padding: 20px 18px;
+            border: 1px solid #ffd6e0;
+            box-shadow: 0 12px 28px rgba(89, 13, 34, 0.06);
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .receipt-header {
+            text-align: center;
+            border-bottom: 1.5px dashed #ffb3c6;
+            padding-bottom: 12px;
+            margin-bottom: 14px;
+        }
+
+        .receipt-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            color: #8c5362;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+
+        .founder-note {
+            font-size: 0.88rem;
+            line-height: 1.6;
+            color: var(--pink-900);
+            background: #fff5f8;
+            padding: 13px 14px;
+            border-radius: 14px;
+            border-left: 3.5px solid var(--pink-500);
+            margin-bottom: 16px;
+        }
+
+        .section-caption {
+            font-size: 0.74rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--pink-700);
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Perforated Voucher Stubs */
+        .ticket-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .ticket {
+            display: flex;
+            align-items: stretch;
+            background: #fff7f9;
+            border: 1.5px solid #ffccd5;
+            border-radius: 14px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.25s var(--ease-spring);
+            position: relative;
+        }
+
+        .ticket:hover {
+            border-color: var(--pink-400);
+        }
+
+        .ticket:active {
+            transform: scale(0.98);
+        }
+
+        .ticket.claimed {
+            background: linear-gradient(135deg, #fff0f4, #ffe3ec);
+            border-color: var(--pink-500);
+        }
+
+        .ticket-main {
+            flex: 1;
+            padding: 11px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .ticket-icon {
+            font-size: 1.35rem;
+            flex-shrink: 0;
+        }
+
+        .ticket-info h4 {
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: var(--pink-900);
+            margin-bottom: 2px;
+        }
+
+        .ticket-info p {
+            font-size: 0.73rem;
+            color: #7a3e4d;
+            line-height: 1.35;
+        }
+
+        .ticket-stub {
+            width: 74px;
+            border-left: 1.5px dashed #ffb3c6;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: var(--pink-700);
+            background: rgba(255, 229, 236, 0.45);
+            transition: all 0.25s;
+        }
+
+        .ticket.claimed .ticket-stub {
+            background: var(--pink-500);
+            color: #ffffff;
+            border-left-color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Barcode Footer */
+        .barcode-wrap {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1.5px dashed #ffb3c6;
+            text-align: center;
+        }
+
+        .barcode-bars {
+            height: 26px;
+            width: 75%;
+            margin: 0 auto 4px;
+            background: repeating-linear-gradient(90deg,
+                    #590d22 0px, #590d22 2px,
+                    transparent 2px, transparent 5px,
+                    #590d22 5px, #590d22 6px,
+                    transparent 6px, transparent 9px,
+                    #590d22 9px, #590d22 12px,
+                    transparent 12px, transparent 14px);
+            opacity: 0.7;
+        }
+
+        .barcode-code {
+            font-family: monospace;
+            font-size: 0.7rem;
+            letter-spacing: 0.2em;
+            color: #8c5362;
+        }
+
+        .toast-copied {
+            font-size: 0.78rem;
+            color: var(--pink-700);
+            font-weight: 700;
+            text-align: center;
+            margin-top: 10px;
+            min-height: 18px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="ambient-orb orb-1"></div>
+    <div class="ambient-orb orb-2"></div>
+    <canvas id="fx-canvas"></canvas>
+
+    <main class="app-shell">
+        <!-- Top Navigation & Progress -->
+        <header class="top-bar">
+            <div class="brand-pill">
+                <span>🌸</span>
+                <span>Pink Apothecary • 20/10</span>
+            </div>
+            <div class="step-dots">
+                <div class="dot active" id="dot-0"></div>
+                <div class="dot" id="dot-1"></div>
+                <div class="dot" id="dot-2"></div>
+            </div>
+        </header>
+
+        <!-- VIEW 1: WELCOME -->
+        <section class="view active" id="view-0">
+            <h1>Trạm Pha Chế Mood</h1>
+            <p class="subtitle">Phiên bản giới hạn mở cửa duy nhất ngày 20/10 dành riêng cho cô gái thích màu hồng.</p>
+
+            <div class="hero-card">
+                <svg width="84" height="84" viewBox="0 0 100 100" fill="none"
+                    style="margin: 0 auto 8px; display:block;">
+                    <circle cx="50" cy="50" r="44" fill="#FFE5EC" stroke="#FF8FA3" stroke-width="2"
+                        stroke-dasharray="4 4" />
+                    <path d="M38 30H62V40L72 68C74.5 75 69.3 82 62 82H38C30.7 82 25.5 75 28 68L38 40V30Z" fill="#FF8FA3"
+                        fill-opacity="0.25" stroke="#C9184A" stroke-width="3" stroke-linejoin="round" />
+                    <rect x="34" y="22" width="32" height="8" rx="4" fill="#FF4D6D" />
+                    <path
+                        d="M50 48C53.5 44 59 44.5 61 48.5C63 52.5 59.5 57.5 50 64C40.5 57.5 37 52.5 39 48.5C41 44.5 46.5 44 50 48Z"
+                        fill="#C9184A" />
+                </svg>
+                <div class="vip-tag">✦ KHÁCH HÀNG VIP DUY NHẤT ✦</div>
+                <p style="font-size: 0.84rem; color: #6d3b47; margin-top: 6px; line-height: 1.5;">
+                    Vì ở xa chưa thể trực tiếp dẫn em đi chơi, anh dựng riêng quầy pha chế nhỏ này để nạp đầy năng lượng
+                    vui vẻ cho em hôm nay.
+                </p>
+            </div>
+
+            <button class="btn-primary" onclick="App.goToStep(1)">
+                <span class="btn-label">Bắt Đầu Tự Pha Công Thức →</span>
+            </button>
+        </section>
+
+        <!-- VIEW 2: INTERACTIVE BREWING -->
+        <section class="view" id="view-1">
+            <h1>Chọn Vị Cho Ngày 20/10</h1>
+            <p class="subtitle" style="margin-bottom: 10px;">Chạm vào đủ 4 tinh chất bên dưới để rót vào lọ thủy tinh
+                nhé.</p>
+
+            <!-- Custom SVG Potion Bottle with Dynamic Wave -->
+            <div class="bottle-stage">
+                <svg class="bottle-svg" id="bottle-svg" viewBox="0 0 160 210" fill="none">
+                    <defs>
+                        <clipPath id="bottle-clip">
+                            <path
+                                d="M62 42 H98 V66 L132 122 C142 138 138 162 126 178 C116 190 100 196 80 196 C60 196 44 190 34 178 C22 162 18 138 28 122 L62 66 Z" />
+                        </clipPath>
+                        <linearGradient id="liq-grad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#ff8fa3" id="grad-stop-1" />
+                            <stop offset="100%" stop-color="#c9184a" id="grad-stop-2" />
+                        </linearGradient>
+                    </defs>
+
+                    <!-- Cork Stopper -->
+                    <rect x="65" y="16" width="30" height="22" rx="5" fill="#d4a373" stroke="#a97142"
+                        stroke-width="2.5" />
+
+                    <!-- Bottle Interior Clipped Liquid -->
+                    <g clip-path="url(#bottle-clip)">
+                        <rect x="0" y="0" width="160" height="210" fill="#fff5f8" />
+                        <g id="wave-group" transform="translate(0, 200)">
+                            <g class="wave-anim">
+                                <path d="M 0 0 Q 25 -8 50 0 T 100 0 T 150 0 T 200 0 T 250 0 T 300 0 V 220 H 0 Z"
+                                    fill="url(#liq-grad)" opacity="0.92" />
+                                <path d="M 0 4 Q 25 12 50 4 T 100 4 T 150 4 T 200 4 T 250 4 T 300 4 V 220 H 0 Z"
+                                    fill="url(#liq-grad)" opacity="0.65" />
+                            </g>
+                        </g>
+                    </g>
+
+                    <!-- Bottle Rim & Glass Outline -->
+                    <rect x="56" y="34" width="48" height="10" rx="5" fill="#ffe5ec" stroke="#ff758f"
+                        stroke-width="3" />
+                    <path
+                        d="M62 44 H98 V66 L132 122 C142 138 138 162 126 178 C116 190 100 196 80 196 C60 196 44 190 34 178 C22 162 18 138 28 122 L62 66 Z"
+                        stroke="#ff758f" stroke-width="4" fill="none" />
+
+                    <!-- Glass Specular Highlight -->
+                    <path d="M38 130 C32 145 35 162 45 174" stroke="#ffffff" stroke-width="5" stroke-linecap="round"
+                        opacity="0.8" />
+                    <circle cx="52" cy="182" r="2.5" fill="#ffffff" opacity="0.8" />
+                </svg>
+            </div>
+
+            <!-- Live Inspector Toast -->
+            <div class="inspector-box" id="inspector">
+                <div class="inspector-icon" id="insp-icon">🧪</div>
+                <div class="inspector-text" id="insp-text">Bình pha chế đang trống (0%). Hãy chọn nguyên liệu đầu tiên!
+                </div>
+            </div>
+
+            <!-- 4 Bento Ingredients -->
+            <div class="bento-grid">
+                <button class="ing-card" onclick="App.addIngredient(this, 0)">
+                    <div class="ing-top">
+                        <span class="ing-emoji">🍓</span>
+                        <span class="ing-dose">+25%</span>
+                    </div>
+                    <div class="ing-title">Tinh Chất Rạng Rỡ</div>
+                    <div class="ing-desc">Giữ nụ cười xinh cả ngày</div>
+                </button>
+
+                <button class="ing-card" onclick="App.addIngredient(this, 1)">
+                    <div class="ing-top">
+                        <span class="ing-emoji">☁️</span>
+                        <span class="ing-dose">+25%</span>
+                    </div>
+                    <div class="ing-title">Bọt Mây Bình Yên</div>
+                    <div class="ing-desc">Lọc sạch mọi âu lo, mệt mỏi</div>
+                </button>
+
+                <button class="ing-card" onclick="App.addIngredient(this, 2)">
+                    <div class="ing-top">
+                        <span class="ing-emoji">👑</span>
+                        <span class="ing-dose">+25%</span>
+                    </div>
+                    <div class="ing-title">Độ Chiều Tuyệt Đối</div>
+                    <div class="ing-desc">Đặc quyền ưu tiên số 1</div>
+                </button>
+
+                <button class="ing-card" onclick="App.addIngredient(this, 3)">
+                    <div class="ing-top">
+                        <span class="ing-emoji">💓</span>
+                        <span class="ing-dose">+25%</span>
+                    </div>
+                    <div class="ing-title">Nỗi Nhớ Từ Xa</div>
+                    <div class="ing-desc">Chưng cất từ khoảng cách</div>
+                </button>
+            </div>
+
+            <!-- Hold-to-Shake Button -->
+            <button class="btn-primary" id="brew-btn" disabled>
+                <div class="hold-fill" id="hold-fill"></div>
+                <span class="btn-label" id="brew-label">Chọn đủ 4 nguyên liệu (0/4)</span>
+            </button>
+        </section>
+
+        <!-- VIEW 3: RECEIPT & PERFORATED VOUCHERS -->
+        <section class="view" id="view-2">
+            <h1>Công Thức Hoàn Tất! ✨</h1>
+            <p class="subtitle" style="margin-bottom: 14px;">Ly <b>"Rosé Elixir 20/10"</b> độc quyền của em đã sẵn sàng.
+            </p>
+
+            <div class="receipt-paper">
+                <div class="receipt-header">
+                    <div style="font-weight: 800; font-size: 0.9rem; color: var(--pink-700);">BIÊN LAI ĐẶC QUYỀN 20/10
+                    </div>
+                    <div class="receipt-meta">
+                        <span>MÃ ĐƠN: #2010-VIP</span>
+                        <span>THANH TOÁN: 0Đ (BAO TRỌN)</span>
+                    </div>
+                </div>
+
+                <div class="founder-note">
+                    "Không giỏi văn vở sến súa đâu, chỉ muốn nhắn là thời gian qua em đã cố gắng nhiều rồi. Chúc cô gái
+                    của anh ngày 20/10 luôn bình yên, rạng rỡ và được nâng niu. Khoảng cách chỉ là tạm thời thôi, anh
+                    luôn ở phía em!" 💕
+                </div>
+
+                <div class="section-caption">
+                    <span>🎟️ 3 Vé Đặc Quyền Đi Kèm</span>
+                    <span id="claim-counter">Đã nhận: 0/3</span>
+                </div>
+
+                <div class="ticket-list">
+                    <div class="ticket" onclick="App.toggleTicket(this)">
+                        <div class="ticket-main">
+                            <span class="ticket-icon">🎬</span>
+                            <div class="ticket-info">
+                                <h4>Đạo Diễn Hẹn Hò Online</h4>
+                                <p>1 buổi tối xem phim/chơi game chung, em toàn quyền chọn kịch bản.</p>
+                            </div>
+                        </div>
+                        <div class="ticket-stub">NHẬN VÉ</div>
+                    </div>
+
+                    <div class="ticket" onclick="App.toggleTicket(this)">
+                        <div class="ticket-main">
+                            <span class="ticket-icon">🛡️</span>
+                            <div class="ticket-info">
+                                <h4>Thẻ Bài "Em Luôn Đúng"</h4>
+                                <p>Quyền ưu tiên thắng vô điều kiện trong mọi cuộc tranh luận.</p>
+                            </div>
+                        </div>
+                        <div class="ticket-stub">NHẬN VÉ</div>
+                    </div>
+
+                    <div class="ticket" onclick="App.toggleTicket(this)">
+                        <div class="ticket-main">
+                            <span class="ticket-icon">🫂</span>
+                            <div class="ticket-info">
+                                <h4>Sổ Tiết Kiệm Cái Ôm</h4>
+                                <p>Đang tích lũy lãi suất mỗi ngày, ngày gặp lại trả đủ cả gốc lẫn lãi.</p>
+                            </div>
+                        </div>
+                        <div class="ticket-stub">NHẬN VÉ</div>
+                    </div>
+                </div>
+
+                <div class="barcode-wrap">
+                    <div class="barcode-bars"></div>
+                    <div class="barcode-code">2010-ALWAYS-BY-YOUR-SIDE</div>
+                </div>
+            </div>
+
+            <button class="btn-primary" onclick="App.copyConfirmation()">
+                <span class="btn-label" id="copy-btn-text">💌 Xác Nhận & Copy Lời Nhắn Cho Chủ Tiệm</span>
+            </button>
+            <div class="toast-copied" id="copy-toast"></div>
+        </section>
+    </main>
+
+    <script>
+        /**
+         * Sound Engine: Pure Web Audio Synthesizer (Zero External Assets)
+         */
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+            }
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioCtx();
+                }
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+            }
+            playNote(freq, type = 'sine', duration = 0.45, gainVal = 0.12) {
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, now);
+                gain.gain.setValueAtTime(gainVal, now);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + duration);
+            }
+            playChord() {
+                const chord = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+                chord.forEach((f, idx) => {
+                    setTimeout(() => this.playNote(f, 'triangle', 0.8, 0.14), idx * 90);
+                });
+            }
+        }
+
+        /**
+         * Particle Engine: High-DPI Confetti & Hearts Burst
+         */
+        class ConfettiEngine {
+            constructor(canvasId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.particles = [];
+                this.running = false;
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+            }
+            resize() {
+                const dpr = window.devicePixelRatio || 1;
+                this.canvas.width = window.innerWidth * dpr;
+                this.canvas.height = window.innerHeight * dpr;
+                this.ctx.scale(dpr, dpr);
+            }
+            burst() {
+                const colors = ['#ff4d6d', '#ff8fa3', '#ffb3c6', '#c9184a', '#ffd166', '#ffffff'];
+                for (let i = 0; i < 75; i++) {
+                    this.particles.push({
+                        x: window.innerWidth / 2,
+                        y: window.innerHeight / 2 + 40,
+                        vx: (Math.random() - 0.5) * 15,
+                        vy: -(Math.random() * 14 + 5),
+                        size: Math.random() * 7 + 5,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        rot: Math.random() * 360,
+                        vRot: (Math.random() - 0.5) * 12,
+                        life: 1
+                    });
+                }
+                if (!this.running) {
+                    this.running = true;
+                    this.loop();
+                }
+            }
+            loop() {
+                this.ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+                this.particles.forEach((p) => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.36; // Gravity
+                    p.vx *= 0.99;
+                    p.rot += p.vRot;
+                    p.life -= 0.008;
+
+                    this.ctx.save();
+                    this.ctx.translate(p.x, p.y);
+                    this.ctx.rotate((p.rot * Math.PI) / 180);
+                    this.ctx.globalAlpha = Math.max(0, p.life);
+                    this.ctx.fillStyle = p.color;
+                    this.ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.65);
+                    this.ctx.restore();
+                });
+                this.particles = this.particles.filter((p) => p.life > 0);
+                if (this.particles.length > 0) {
+                    requestAnimationFrame(() => this.loop());
+                } else {
+                    this.running = false;
+                }
+            }
+        }
+
+        /**
+         * Main Application State & Controller
+         */
+        const App = {
+            sfx: new SoundEngine(),
+            fx: new ConfettiEngine('fx-canvas'),
+            selectedCount: 0,
+            brewProgress: 0,
+            brewTimer: null,
+
+            ingredientsData: [
+                {
+                    icon: '🍓',
+                    text: 'Đã rót 25% Tinh Chất Rạng Rỡ: Nhắc nhẹ là ai đó cười lên rất xinh nên hôm nay phải cười nhiều vào nhé.',
+                    c1: '#ff9ebb', c2: '#ff4d6d'
+                },
+                {
+                    icon: '☁️',
+                    text: 'Đã thêm 25% Bọt Mây Bình Yên: Mọi deadline hay mệt mỏi ngoài kia tạm gác lại hết, hôm nay chỉ được phép vui thôi.',
+                    c1: '#ffb3c6', c2: '#ff758f'
+                },
+                {
+                    icon: '👑',
+                    text: 'Đã nạp 25% Độ Chiều Tuyệt Đối: Đặc quyền ngày 20/10, hôm nay em nói gì cũng auto hợp lý 100%.',
+                    c1: '#ff758f', c2: '#c9184a'
+                },
+                {
+                    icon: '💓',
+                    text: 'Đã khóa 25% Nỗi Nhớ Từ Xa: Ở xa chưa tặng hoa tận tay được, nhưng lúc nào cũng nghĩ về em đầu tiên.',
+                    c1: '#ff4d6d', c2: '#9b0f36'
+                }
+            ],
+
+            goToStep(stepIdx) {
+                this.sfx.playNote(659.25, 'sine', 0.4);
+                document.querySelectorAll('.view').forEach((el, i) => {
+                    el.classList.toggle('active', i === stepIdx);
+                });
+                document.querySelectorAll('.dot').forEach((el, i) => {
+                    el.classList.toggle('active', i === stepIdx);
+                });
+            },
+
+            addIngredient(btnEl, index) {
+                if (btnEl.classList.contains('added')) return;
+                btnEl.classList.add('added');
+                btnEl.querySelector('.ing-dose').innerText = '✓ ĐÃ THÊM';
+
+                this.selectedCount++;
+                const notes = [523.25, 587.33, 659.25, 783.99];
+                this.sfx.playNote(notes[this.selectedCount - 1], 'triangle', 0.45, 0.15);
+                if (navigator.vibrate) navigator.vibrate(25);
+
+                // Update SVG Liquid Height & Gradient
+                const item = this.ingredientsData[index];
+                const yOffset = 200 - (this.selectedCount * 34); // Rises from y=200 up to y=64
+                document.getElementById('wave-group').setAttribute('transform', `translate(0, ${yOffset})`);
+                document.getElementById('grad-stop-1').setAttribute('stop-color', item.c1);
+                document.getElementById('grad-stop-2').setAttribute('stop-color', item.c2);
+
+                // Update Inspector Toast
+                const inspBox = document.getElementById('inspector');
+                inspBox.classList.remove('pop');
+                void inspBox.offsetWidth;
+                inspBox.classList.add('pop');
+                document.getElementById('insp-icon').innerText = item.icon;
+                document.getElementById('insp-text').innerText = item.text;
+
+                // Update Hold Button State
+                const brewBtn = document.getElementById('brew-btn');
+                const brewLabel = document.getElementById('brew-label');
+                if (this.selectedCount < 4) {
+                    brewLabel.innerText = `Chọn đủ 4 nguyên liệu (${this.selectedCount}/4)`;
+                } else {
+                    brewBtn.disabled = false;
+                    brewLabel.innerText = '✨ Nhấn & Giữ Để Lắc Đều Bình (0%) ✨';
+                    this.bindHoldToBrew();
+                }
+            },
+
+            bindHoldToBrew() {
+                const brewBtn = document.getElementById('brew-btn');
+                const bottle = document.getElementById('bottle-svg');
+                const fill = document.getElementById('hold-fill');
+                const label = document.getElementById('brew-label');
+
+                const startHold = (e) => {
+                    e.preventDefault();
+                    if (this.brewProgress >= 100) return;
+                    bottle.classList.add('shaking');
+
+                    this.brewTimer = setInterval(() => {
+                        this.brewProgress += 2.5;
+                        if (this.brewProgress > 100) this.brewProgress = 100;
+                        fill.style.width = `${this.brewProgress}%`;
+                        label.innerText = `Đang hòa quyện năng lượng... (${Math.floor(this.brewProgress)}%)`;
+
+                        if (Math.floor(this.brewProgress) % 10 === 0) {
+                            this.sfx.playNote(440 + this.brewProgress * 4.5, 'sine', 0.12, 0.07);
+                            if (navigator.vibrate) navigator.vibrate(18);
+                        }
+
+                        if (this.brewProgress >= 100) {
+                            clearInterval(this.brewTimer);
+                            bottle.classList.remove('shaking');
+                            this.sfx.playChord();
+                            if (navigator.vibrate) navigator.vibrate([80, 40, 150]);
+                            setTimeout(() => {
+                                this.goToStep(2);
+                                this.fx.burst();
+                            }, 350);
+                        }
+                    }, 35);
+                };
+
+                const endHold = () => {
+                    if (this.brewProgress < 100) {
+                        clearInterval(this.brewTimer);
+                        bottle.classList.remove('shaking');
+                    }
+                };
+
+                brewBtn.addEventListener('mousedown', startHold);
+                brewBtn.addEventListener('touchstart', startHold, { passive: false });
+                window.addEventListener('mouseup', endHold);
+                window.addEventListener('touchend', endHold);
+            },
+
+            toggleTicket(el) {
+                el.classList.toggle('claimed');
+                const isClaimed = el.classList.contains('claimed');
+                el.querySelector('.ticket-stub').innerText = isClaimed ? '✓ ĐÃ CHỐT' : 'NHẬN VÉ';
+                this.sfx.playNote(isClaimed ? 880 : 523.25, 'triangle', 0.3, 0.12);
+                if (navigator.vibrate) navigator.vibrate(20);
+
+                const total = document.querySelectorAll('.ticket.claimed').length;
+                document.getElementById('claim-counter').innerText = `Đã nhận: ${total}/3`;
+                if (total === 3) this.fx.burst();
+            },
+
+            copyConfirmation() {
+                this.sfx.playChord();
+                this.fx.burst();
+                const claimedTitles = Array.from(document.querySelectorAll('.ticket.claimed h4'))
+                    .map(h => h.innerText);
+                const voucherStr = claimedTitles.length > 0
+                    ? claimedTitles.join(' + ')
+                    : 'Cả 3 Vé Đặc Quyền 20/10';
+
+                const message = `🌸 Báo cáo chủ tiệm: Em đã pha xong ly "Rosé Elixir 20/10" và chốt đơn nhận [${voucherStr}] rồi nhé! 🎟️💕`;
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(message).then(() => {
+                        document.getElementById('copy-btn-text').innerText = '✓ Đã Copy! Dán Vào Khung Chat Gửi Anh Nhé';
+                        document.getElementById('copy-toast').innerText = 'Đã lưu tin nhắn xác nhận vào bộ nhớ tạm ✨';
+                    });
+                } else {
+                    document.getElementById('copy-toast').innerText = 'Hãy chụp màn hình hóa đơn này gửi cho chủ tiệm nhé! 📸';
+                }
+            }
+        };
+    </script>
+</body>
+
+</html>
