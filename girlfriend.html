@@ -129,7 +129,7 @@
         .brand-pill {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 7px;
             background: var(--pink-100);
             border: 1px solid var(--pink-200);
             color: var(--pink-700);
@@ -141,38 +141,13 @@
             border-radius: 99px;
         }
 
-        .top-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .music-btn {
+        .music-indicator {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid var(--pink-200);
-            border-radius: 99px;
-            padding: 5px 11px;
-            font-size: 0.72rem;
-            font-weight: 700;
-            color: var(--pink-700);
-            cursor: pointer;
-            transition: all 0.25s var(--ease-spring);
-            box-shadow: 0 2px 8px rgba(201, 24, 74, 0.08);
-        }
-
-        .music-btn:hover {
-            transform: scale(1.05);
-            background: #fff;
-            border-color: var(--pink-400);
-        }
-
-        .music-btn.muted {
-            opacity: 0.65;
-            color: #888;
-            border-color: #e0e0e0;
+            gap: 3px;
+            margin-left: 2px;
+            padding-left: 6px;
+            border-left: 1px solid var(--pink-300, #ffb3c6);
         }
 
         .sound-waves {
@@ -188,19 +163,15 @@
             height: 3px;
             background: var(--pink-500);
             border-radius: 2px;
-            transition: height 0.2s ease;
-        }
-
-        .music-btn.playing .sound-waves i:nth-child(1) {
             animation: waveBounce 0.8s infinite ease-in-out alternate;
         }
 
-        .music-btn.playing .sound-waves i:nth-child(2) {
-            animation: waveBounce 0.8s 0.25s infinite ease-in-out alternate;
+        .sound-waves i:nth-child(2) {
+            animation-delay: 0.25s;
         }
 
-        .music-btn.playing .sound-waves i:nth-child(3) {
-            animation: waveBounce 0.8s 0.5s infinite ease-in-out alternate;
+        .sound-waves i:nth-child(3) {
+            animation-delay: 0.5s;
         }
 
         @keyframes waveBounce {
@@ -676,20 +647,16 @@
             <div class="brand-pill">
                 <span>🌸</span>
                 <span>Pink Apothecary • 20/10</span>
-            </div>
-            <div class="top-actions">
-                <button class="music-btn playing" id="music-btn" onclick="App.toggleBgm()" title="Bật/Tắt nhạc nền dễ thương">
-                    <span class="music-icon">🎵</span>
-                    <span class="music-label" id="music-text">Nhạc: Bật</span>
-                    <span class="sound-waves" id="sound-waves">
+                <span class="music-indicator" title="Nhạc nền tự động">
+                    <span class="sound-waves">
                         <i></i><i></i><i></i>
                     </span>
-                </button>
-                <div class="step-dots">
-                    <div class="dot active" id="dot-0"></div>
-                    <div class="dot" id="dot-1"></div>
-                    <div class="dot" id="dot-2"></div>
-                </div>
+                </span>
+            </div>
+            <div class="step-dots">
+                <div class="dot active" id="dot-0"></div>
+                <div class="dot" id="dot-1"></div>
+                <div class="dot" id="dot-2"></div>
             </div>
         </header>
 
@@ -717,7 +684,7 @@
                 </p>
                 <div class="audio-hint">
                     <span>🎧</span>
-                    <span>Chạm vào màn hình để nghe nhạc nền hộp nhạc & âm thanh pha chế nhé</span>
+                    <span>Nhạc nền hộp nhạc tự động phát khi bạn chạm vào màn hình ✨</span>
                 </div>
             </div>
 
@@ -970,44 +937,6 @@
                 this.bgmGain.gain.exponentialRampToValueAtTime(0.12, now + 1.2);
 
                 this.scheduleBgmLoop();
-                this.updateBgmUi(true);
-            }
-
-            pauseBgm() {
-                if (!this.ctx || !this.bgmPlaying) return;
-                this.bgmPlaying = false;
-                clearTimeout(this.bgmTimeout);
-
-                const now = this.ctx.currentTime;
-                this.bgmGain.gain.cancelScheduledValues(now);
-                this.bgmGain.gain.setValueAtTime(Math.max(0.0001, this.bgmGain.gain.value), now);
-                this.bgmGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
-
-                this.updateBgmUi(false);
-            }
-
-            toggleBgm() {
-                this.init();
-                if (this.bgmPlaying) {
-                    this.pauseBgm();
-                } else {
-                    this.startBgm();
-                }
-            }
-
-            updateBgmUi(isPlaying) {
-                const btn = document.getElementById('music-btn');
-                const text = document.getElementById('music-text');
-                if (!btn || !text) return;
-                if (isPlaying) {
-                    btn.classList.add('playing');
-                    btn.classList.remove('muted');
-                    text.innerText = 'Nhạc: Bật';
-                } else {
-                    btn.classList.remove('playing');
-                    btn.classList.add('muted');
-                    text.innerText = 'Nhạc: Tắt';
-                }
             }
 
             scheduleBgmLoop() {
@@ -1347,11 +1276,6 @@
                 }
             },
 
-            toggleBgm() {
-                this.audioStarted = true;
-                this.sfx.toggleBgm();
-            },
-
             ingredientsData: [
                 {
                     icon: '🍓',
@@ -1512,9 +1436,17 @@
             }
         };
 
-        // Auto start gentle audio on first user touch / click
-        window.addEventListener('click', () => App.initAudio(), { once: true });
-        window.addEventListener('touchstart', () => App.initAudio(), { once: true });
+        // 100% Automatic Music Playback:
+        // Try immediately on load & ensure start on very first interaction
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => App.initAudio());
+        } else {
+            App.initAudio();
+        }
+
+        ['click', 'touchstart', 'touchend', 'pointerdown', 'mousedown'].forEach((evt) => {
+            window.addEventListener(evt, () => App.initAudio(), { once: true, passive: true });
+        });
     </script>
 </body>
 
